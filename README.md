@@ -1,13 +1,14 @@
 # lambda-failure-lab
 
-A small lab for testing Lambda failure scenarios and observability patterns.
+Lab scenarios for Lambda-style failure modes: timeouts and transient retries.
 
-## What this repo is for
+## Scenarios
 
-- Reproduce common Lambda failure modes
-- Verify logging, metrics, and trace behavior
-- Practice safe recovery patterns
+- `scenarios/timeout` — handler that can sleep past a configured timeout
+- `scenarios/retry` — handler that raises a transient error
 
-## Scope
+## Tests
 
-This initial version sets the project direction and will be expanded with runnable scenarios and test fixtures.
+```bash
+python -m unittest tests/test_handlers.py
+```
