@@ -11,5 +11,9 @@ Lab scenarios for Lambda-style failure modes: timeouts, transient retries, and t
 ## Tests
 
 ```bash
-python -m unittest tests/test_handlers.py
+python -m unittest discover -s tests -v
 ```
+
+## CI
+
+GitHub Actions runs the unit tests on every push and pull request.
