@@ -9,6 +9,11 @@ Includes a small client-side exponential backoff helper for exercising those fai
 - `scenarios/retry` — handler that raises a transient error
 - `scenarios/throttle` — handler that simulates 429 / rate-limit responses
 
+## Client helpers
+
+- `clients/backoff.py` — exponential backoff retries
+- `clients/circuit_breaker.py` — open the circuit after repeated failures
+
 ## Client helper
 
 ```python
