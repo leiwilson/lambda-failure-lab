@@ -2,6 +2,7 @@
 import unittest
 
 from clients.backoff import retry_with_backoff
+from clients.clock import FakeClock
 from scenarios.retry.handler import TransientError
 from scenarios.throttle.handler import ThrottleError, reset as throttle_reset
 
@@ -66,6 +67,50 @@ class TestBackoff(unittest.TestCase):
                 retry_on=(ThrottleError,),
                 jitter=False,
             )
+
+    def test_fake_clock_records_backoff_delays(self):
+        clock = FakeClock()
+        state = {"n": 0}
+
+        def flaky():
+            state["n"] += 1
+            if state["n"] < 3:
+                raise TransientError("boom")
+            return {"ok": True}
+
+        retry_with_backoff(
+            flaky,
+            retries=3,
+            base_delay=0.01,
+            max_delay=0.2,
+            retry_on=(TransientError,),
+            jitter=False,
+            clock=clock,
+        )
+        # attempt 0 -> 0.01, attempt 1 -> 0.02
+        self.assertAlmostEqual(clock.monotonic(), 0.03)
+
+    def test_fake_clock_honors_retry_after(self):
+        clock = FakeClock()
+        calls = {"n": 0}
+
+        def throttle_once():
+            calls["n"] += 1
+            if calls["n"] < 2:
+                raise ThrottleError(retry_after=100)
+            return {"ok": True}
+
+        retry_with_backoff(
+            throttle_once,
+            retries=2,
+            base_delay=0.01,
+            max_delay=0.02,
+            retry_on=(ThrottleError,),
+            jitter=False,
+            clock=clock,
+        )
+        # retry_after=100 -> delay=max(0.01, 1.0)=1.0
+        self.assertAlmostEqual(clock.monotonic(), 1.0)
 
 
 if __name__ == "__main__":

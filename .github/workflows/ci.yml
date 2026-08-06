@@ -16,3 +16,5 @@ jobs:
         run: python -m unittest discover -s tests -v
       - name: Catalog smoke check
         run: python -m scenarios.catalog
+      - name: Catalog JSON smoke check
+        run: python -m scenarios.catalog --format json

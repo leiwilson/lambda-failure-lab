@@ -3,7 +3,14 @@ from __future__ import annotations
 
 import random
 import time
-from typing import Callable, Iterable, Type
+from typing import Callable, Iterable, Protocol, Type
+
+
+class SleepClock(Protocol):
+    """Clock that can advance time during backoff delays."""
+
+    def sleep(self, seconds: float) -> None:
+        """Pause or simulate a delay of seconds."""
 
 
 def retry_with_backoff(
@@ -14,8 +21,10 @@ def retry_with_backoff(
     max_delay: float = 0.2,
     retry_on: Iterable[Type[BaseException]] = (),
     jitter: bool = True,
+    clock: SleepClock | None = None,
 ):
     """Call fn, retrying on selected exceptions with exponential backoff."""
+    sleep = clock.sleep if clock is not None else time.sleep
     errors = tuple(retry_on) or (Exception,)
     attempt = 0
     while True:
@@ -31,5 +40,5 @@ def retry_with_backoff(
             retry_after = getattr(exc, "retry_after", None)
             if retry_after is not None:
                 delay = max(delay, float(retry_after) * 0.01)
-            time.sleep(delay)
+            sleep(delay)
             attempt += 1

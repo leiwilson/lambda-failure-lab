@@ -1,6 +1,8 @@
 """Catalog of failure-lab scenarios and client patterns."""
 from __future__ import annotations
 
+import argparse
+import json
 from dataclasses import dataclass
 
 
@@ -51,9 +53,33 @@ def format_catalog() -> str:
     return "\n".join(lines)
 
 
-def main() -> None:
+def catalog_entries_json() -> list[dict[str, str]]:
+    """Return catalog entries as stable JSON-serializable dicts."""
+    return [
+        {"scenario_id": entry.scenario_id, "description": entry.description}
+        for entry in CATALOG
+    ]
+
+
+def format_catalog_json() -> str:
+    """Render the catalog as a stable JSON list."""
+    return json.dumps(catalog_entries_json(), indent=2)
+
+
+def main(argv: list[str] | None = None) -> None:
     """Print the scenario catalog."""
-    print(format_catalog())
+    parser = argparse.ArgumentParser(description="List lambda-failure-lab scenarios")
+    parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format (default: text)",
+    )
+    args = parser.parse_args(argv)
+    if args.format == "json":
+        print(format_catalog_json())
+    else:
+        print(format_catalog())
 
 
 if __name__ == "__main__":
