@@ -18,3 +18,11 @@ jobs:
         run: python -m scenarios.catalog
       - name: Catalog JSON smoke check
         run: python -m scenarios.catalog --format json
+      - name: Runner smoke check
+        run: python -c "from scenarios.runner import run_scenario, report_to_json; print(report_to_json(run_scenario('retry', seed=0)))"
+      - name: CLI list smoke check
+        run: python -m scenarios.cli list
+      - name: CLI list JSON smoke check
+        run: python -m scenarios.cli list --format json
+      - name: CLI run smoke check
+        run: python -m scenarios.cli run retry --seed 0
