@@ -2,11 +2,18 @@
 from __future__ import annotations
 
 import time
-from typing import Callable, Iterable, Type
+from typing import Callable, Iterable, Protocol, Type
 
 
 class CircuitOpenError(Exception):
     """Raised when the circuit is open and calls are short-circuited."""
+
+
+class MonotonicClock(Protocol):
+    """Clock that exposes monotonic time for recovery windows."""
+
+    def monotonic(self) -> float:
+        """Return monotonic seconds."""
 
 
 class CircuitBreaker:
@@ -16,10 +23,12 @@ class CircuitBreaker:
         failure_threshold: int = 3,
         recovery_timeout: float = 0.05,
         watch: Iterable[Type[BaseException]] = (),
+        clock: MonotonicClock | None = None,
     ):
         self.failure_threshold = failure_threshold
         self.recovery_timeout = recovery_timeout
         self.watch = tuple(watch) or (Exception,)
+        self._monotonic = clock.monotonic if clock is not None else time.monotonic
         self.failures = 0
         self.opened_at = None
 
@@ -27,7 +36,7 @@ class CircuitBreaker:
     def is_open(self) -> bool:
         if self.opened_at is None:
             return False
-        if (time.monotonic() - self.opened_at) >= self.recovery_timeout:
+        if (self._monotonic() - self.opened_at) >= self.recovery_timeout:
             # half-open: allow one trial
             return False
         return True
@@ -40,7 +49,7 @@ class CircuitBreaker:
         except self.watch:
             self.failures += 1
             if self.failures >= self.failure_threshold:
-                self.opened_at = time.monotonic()
+                self.opened_at = self._monotonic()
             raise
         self.failures = 0
         self.opened_at = None
