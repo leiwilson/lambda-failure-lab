@@ -1,4 +1,5 @@
 """Tests for clients.backoff retry helper."""
+import random
 import unittest
 
 from clients.backoff import retry_with_backoff
@@ -111,6 +112,65 @@ class TestBackoff(unittest.TestCase):
         )
         # retry_after=100 -> delay=max(0.01, 1.0)=1.0
         self.assertAlmostEqual(clock.monotonic(), 1.0)
+
+    def test_seeded_jitter_records_exact_delays_on_fake_clock(self):
+        clock = FakeClock()
+        state = {"n": 0}
+        seed = 42
+        base_delay = 0.01
+        jitter_rng = random.Random(seed)
+        expected_total = 0.0
+        for attempt in range(2):
+            delay = base_delay * (2 ** attempt)
+            delay *= 0.5 + jitter_rng.random()
+            expected_total += delay
+
+        def flaky():
+            state["n"] += 1
+            if state["n"] < 3:
+                raise TransientError("boom")
+            return {"ok": True}
+
+        retry_with_backoff(
+            flaky,
+            retries=3,
+            base_delay=base_delay,
+            max_delay=0.2,
+            retry_on=(TransientError,),
+            jitter=True,
+            seed=seed,
+            clock=clock,
+        )
+        self.assertAlmostEqual(clock.monotonic(), expected_total)
+
+    def test_injected_rng_controls_jitter_sequence(self):
+        clock = FakeClock()
+        injected = random.Random(7)
+        rolls = [injected.random(), injected.random()]
+        injected = random.Random(7)
+        state = {"n": 0}
+
+        def flaky():
+            state["n"] += 1
+            if state["n"] < 3:
+                raise TransientError("boom")
+            return {"ok": True}
+
+        retry_with_backoff(
+            flaky,
+            retries=3,
+            base_delay=0.01,
+            max_delay=0.2,
+            retry_on=(TransientError,),
+            jitter=True,
+            rng=injected,
+            clock=clock,
+        )
+        expected = sum(
+            0.01 * (2 ** attempt) * (0.5 + roll)
+            for attempt, roll in enumerate(rolls)
+        )
+        self.assertAlmostEqual(clock.monotonic(), expected)
 
 
 if __name__ == "__main__":

@@ -13,6 +13,18 @@ class SleepClock(Protocol):
         """Pause or simulate a delay of seconds."""
 
 
+def _jitter_source(
+    rng: random.Random | None,
+    seed: int | None,
+) -> random.Random | None:
+    """Return a dedicated RNG when seed or rng is supplied."""
+    if rng is not None:
+        return rng
+    if seed is not None:
+        return random.Random(seed)
+    return None
+
+
 def retry_with_backoff(
     fn: Callable[[], object],
     *,
@@ -21,11 +33,14 @@ def retry_with_backoff(
     max_delay: float = 0.2,
     retry_on: Iterable[Type[BaseException]] = (),
     jitter: bool = True,
+    seed: int | None = None,
+    rng: random.Random | None = None,
     clock: SleepClock | None = None,
 ):
     """Call fn, retrying on selected exceptions with exponential backoff."""
     sleep = clock.sleep if clock is not None else time.sleep
     errors = tuple(retry_on) or (Exception,)
+    jitter_rng = _jitter_source(rng, seed)
     attempt = 0
     while True:
         try:
@@ -35,7 +50,12 @@ def retry_with_backoff(
                 raise
             delay = min(max_delay, base_delay * (2 ** attempt))
             if jitter:
-                delay = delay * (0.5 + random.random())
+                jitter_roll = (
+                    jitter_rng.random()
+                    if jitter_rng is not None
+                    else random.random()
+                )
+                delay = delay * (0.5 + jitter_roll)
             # Prefer Retry-After when present (ThrottleError).
             retry_after = getattr(exc, "retry_after", None)
             if retry_after is not None:
