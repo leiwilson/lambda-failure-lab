@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "lambda-failure-lab"
+version = "0.1.0"
+description = "Lab scenarios for Lambda-style timeouts, retries, and throttling"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "leiwilson" }]
+keywords = ["lambda", "retry", "throttle", "timeout", "chaos"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Topic :: Software Development :: Testing",
+]
+
+[project.optional-dependencies]
+dev = ["pytest"]
+
+[tool.setuptools.packages.find]
+include = ["clients*", "scenarios*"]
+
+[tool.setuptools.package-data]
+scenarios = ["**/*"]
