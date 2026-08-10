@@ -6,7 +6,7 @@ import json
 import sys
 from dataclasses import asdict
 
-from scenarios.catalog import catalog_entries_json, format_catalog
+from scenarios.catalog import CATALOG, catalog_entries_json, format_catalog
 from scenarios.runner import known_scenario_ids, report_to_json, run_scenario
 
 _FAILURE_OUTCOMES = frozenset({"failed", "open"})
@@ -48,6 +48,15 @@ def build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Output format (default: text)",
     )
+
+    show_parser = subparsers.add_parser("show", help="Show one catalog scenario")
+    show_parser.add_argument("scenario_id", help="Scenario id from the catalog")
+    show_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format (default: text)",
+    )
     return parser
 
 
@@ -57,8 +66,25 @@ def format_run_text(report) -> str:
         f"scenario_id={report.scenario_id} "
         f"outcome={report.outcome} "
         f"attempts={report.attempts} "
-        f"seed={report.seed}"
+        f"seed={report.seed} "
+        f"elapsed_ms={report.elapsed_ms}"
     )
+
+
+def format_show_text(entry) -> str:
+    """Render one catalog entry as plain text."""
+    return (
+        f"{entry.scenario_id} ({entry.location})\n"
+        f"  {entry.description}"
+    )
+
+
+def lookup_scenario(scenario_id: str):
+    """Return a catalog entry or None when unknown."""
+    for entry in CATALOG:
+        if entry.scenario_id == scenario_id:
+            return entry
+    return None
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -82,6 +108,26 @@ def main(argv: list[str] | None = None) -> int:
             print(report_to_json(report))
         else:
             print(format_run_text(report))
+        return 0
+
+    if args.command == "show":
+        entry = lookup_scenario(args.scenario_id)
+        if entry is None:
+            print(f"unknown scenario: {args.scenario_id}", file=sys.stderr)
+            return 1
+        if args.format == "json":
+            print(
+                json.dumps(
+                    {
+                        "scenario_id": entry.scenario_id,
+                        "location": entry.location,
+                        "description": entry.description,
+                    },
+                    indent=2,
+                )
+            )
+        else:
+            print(format_show_text(entry))
         return 0
 
     if args.command == "run-all":

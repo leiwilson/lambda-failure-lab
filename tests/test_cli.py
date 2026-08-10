@@ -44,7 +44,7 @@ class TestCli(unittest.TestCase):
         self.assertEqual(code, 0)
         parsed = json.loads(buffer.getvalue())
         self.assertEqual(parsed["scenario_id"], "timeout")
-        self.assertEqual(set(parsed.keys()), {"scenario_id", "outcome", "attempts", "seed"})
+        self.assertEqual(set(parsed.keys()), {"scenario_id", "outcome", "attempts", "seed", "elapsed_ms"})
 
     def test_run_unknown_scenario_returns_error(self):
         buffer = io.StringIO()
@@ -77,16 +77,16 @@ class TestCli(unittest.TestCase):
             list(known_scenario_ids()),
         )
         for item in parsed:
-            self.assertEqual(set(item.keys()), {"scenario_id", "outcome", "attempts", "seed"})
+            self.assertEqual(set(item.keys()), {"scenario_id", "outcome", "attempts", "seed", "elapsed_ms"})
             self.assertEqual(item["seed"], 2)
 
     def test_run_all_exit_nonzero_on_failed_or_open(self):
         ids = list(known_scenario_ids())
         fake_reports = [
-            RunReport(ids[0], "success", 1, 0),
-            RunReport(ids[1], "failed", 3, 0),
-            RunReport(ids[2], "success", 1, 0),
-            RunReport(ids[3], "recovered", 2, 0),
+            RunReport(ids[0], "success", 1, 0, 0),
+            RunReport(ids[1], "failed", 3, 0, 0),
+            RunReport(ids[2], "success", 1, 0, 0),
+            RunReport(ids[3], "recovered", 2, 0, 0),
         ]
 
         def fake_run(scenario_id, seed=0, clock=None):
@@ -102,7 +102,7 @@ class TestCli(unittest.TestCase):
     def test_run_all_treats_recovered_as_success(self):
         ids = list(known_scenario_ids())
         fake_reports = [
-            RunReport(scenario_id, "recovered" if scenario_id == "circuit-breaker" else "success", 1, 0)
+            RunReport(scenario_id, "recovered" if scenario_id == "circuit-breaker" else "success", 1, 0, 0)
             for scenario_id in ids
         ]
 
@@ -119,7 +119,7 @@ class TestCli(unittest.TestCase):
     def test_run_all_exit_nonzero_on_open(self):
         ids = list(known_scenario_ids())
         fake_reports = [
-            RunReport(scenario_id, "open" if scenario_id == "circuit-breaker" else "success", 1, 0)
+            RunReport(scenario_id, "open" if scenario_id == "circuit-breaker" else "success", 1, 0, 0)
             for scenario_id in ids
         ]
 
@@ -153,10 +153,36 @@ class TestCli(unittest.TestCase):
         self.assertIsInstance(parsed, list)
         self.assertEqual(len(parsed), 4)
         self.assertEqual(
-            set(parsed[0].keys()), {"scenario_id", "outcome", "attempts", "seed"}
+            set(parsed[0].keys()), {"scenario_id", "outcome", "attempts", "seed", "elapsed_ms"}
         )
         outcomes = {item["scenario_id"]: item["outcome"] for item in parsed}
         self.assertNotIn(outcomes.get("circuit-breaker"), {"failed", "open"})
+
+    def test_show_text_output(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["show", "retry"])
+        self.assertEqual(code, 0)
+        output = buffer.getvalue()
+        self.assertIn("retry", output)
+        self.assertIn("scenarios/retry", output)
+
+    def test_show_json_output(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["show", "retry", "--format", "json"])
+        self.assertEqual(code, 0)
+        parsed = json.loads(buffer.getvalue())
+        self.assertEqual(parsed["scenario_id"], "retry")
+        self.assertEqual(parsed["location"], "scenarios/retry")
+        self.assertIn("description", parsed)
+
+    def test_show_unknown_scenario_returns_error(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["show", "missing"])
+        self.assertEqual(code, 1)
+
 
 
 if __name__ == "__main__":
