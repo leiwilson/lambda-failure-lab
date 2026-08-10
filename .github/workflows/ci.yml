@@ -24,6 +24,8 @@ jobs:
         run: python -m scenarios.cli list
       - name: CLI list JSON smoke check
         run: python -m scenarios.cli list --format json
+      - name: CLI show smoke check
+        run: python -m scenarios.cli show retry
       - name: CLI run smoke check
         run: python -m scenarios.cli run retry --seed 0
       - name: CLI run-all smoke check

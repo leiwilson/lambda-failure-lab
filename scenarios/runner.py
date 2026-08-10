@@ -21,6 +21,7 @@ class RunReport:
     outcome: str
     attempts: int
     seed: int
+    elapsed_ms: int
 
 
 def known_scenario_ids() -> tuple[str, ...]:
@@ -45,7 +46,16 @@ def run_scenario(
     runner = runners.get(scenario_id)
     if runner is None:
         raise ValueError(f"unknown scenario: {scenario_id}")
-    return runner(seed=seed, clock=clock)
+    started = clock.monotonic()
+    report = runner(seed=seed, clock=clock)
+    elapsed_ms = int(round((clock.monotonic() - started) * 1000))
+    return RunReport(
+        report.scenario_id,
+        report.outcome,
+        report.attempts,
+        report.seed,
+        elapsed_ms,
+    )
 
 
 def report_to_json(report: RunReport) -> str:
@@ -74,8 +84,8 @@ def _run_retry(*, seed: int, clock: FakeClock) -> RunReport:
             clock=clock,
         )
     except TransientError:
-        return RunReport("retry", "failed", state["attempts"], seed)
-    return RunReport("retry", "success", state["attempts"], seed)
+        return RunReport("retry", "failed", state["attempts"], seed, 0)
+    return RunReport("retry", "success", state["attempts"], seed, 0)
 
 
 def _run_throttle(*, seed: int, clock: FakeClock) -> RunReport:
@@ -98,14 +108,14 @@ def _run_throttle(*, seed: int, clock: FakeClock) -> RunReport:
             clock=clock,
         )
     except throttle_mod.ThrottleError:
-        return RunReport("throttle", "failed", state["attempts"], seed)
-    return RunReport("throttle", "success", state["attempts"], seed)
+        return RunReport("throttle", "failed", state["attempts"], seed, 0)
+    return RunReport("throttle", "success", state["attempts"], seed, 0)
 
 
 def _run_timeout(*, seed: int, clock: FakeClock) -> RunReport:
     del clock
     timeout_mod.handler({"sleep_seconds": 0})
-    return RunReport("timeout", "success", 1, seed)
+    return RunReport("timeout", "success", 1, seed, 0)
 
 
 def _run_circuit_breaker(*, seed: int, clock: FakeClock) -> RunReport:
@@ -143,4 +153,4 @@ def _run_circuit_breaker(*, seed: int, clock: FakeClock) -> RunReport:
     except CircuitOpenError:
         pass
 
-    return RunReport("circuit-breaker", outcome, attempts, seed)
+    return RunReport("circuit-breaker", outcome, attempts, seed, 0)
