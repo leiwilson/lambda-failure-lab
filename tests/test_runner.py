@@ -23,7 +23,7 @@ class TestRunner(unittest.TestCase):
             run_scenario("missing")
 
     def test_report_to_json_shape(self):
-        report = RunReport("retry", "success", 2, 7)
+        report = RunReport("retry", "success", 2, 7, 15)
         parsed = json.loads(report_to_json(report))
         self.assertEqual(
             parsed,
@@ -32,6 +32,7 @@ class TestRunner(unittest.TestCase):
                 "outcome": "success",
                 "attempts": 2,
                 "seed": 7,
+                "elapsed_ms": 15,
             },
         )
 
@@ -44,6 +45,7 @@ class TestRunner(unittest.TestCase):
         self.assertEqual(first.scenario_id, "retry")
         self.assertIn(first.outcome, ("success", "failed"))
         self.assertGreater(first.attempts, 0)
+        self.assertGreaterEqual(first.elapsed_ms, 0)
 
     def test_run_throttle_resets_module_state(self):
         report = run_scenario("throttle", seed=0, clock=FakeClock())
@@ -52,7 +54,17 @@ class TestRunner(unittest.TestCase):
 
     def test_run_timeout_skips_real_sleep(self):
         report = run_scenario("timeout", seed=2, clock=FakeClock())
-        self.assertEqual(report, RunReport("timeout", "success", 1, 2))
+        self.assertEqual(report.scenario_id, "timeout")
+        self.assertEqual(report.outcome, "success")
+        self.assertEqual(report.attempts, 1)
+        self.assertEqual(report.seed, 2)
+        self.assertEqual(report.elapsed_ms, 0)
+
+    def test_elapsed_ms_tracks_fake_clock_delta(self):
+        clock = FakeClock()
+        report = run_scenario("circuit-breaker", seed=0, clock=clock)
+        self.assertGreater(report.elapsed_ms, 0)
+        self.assertEqual(report.elapsed_ms, int(round(clock.monotonic() * 1000)))
 
     def test_run_circuit_breaker_recovers_with_fake_clock(self):
         report = run_scenario("circuit-breaker", seed=0, clock=FakeClock())
