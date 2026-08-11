@@ -184,6 +184,15 @@ class TestCli(unittest.TestCase):
         self.assertEqual(code, 1)
 
 
+    def test_version_prints_package_version(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["version"])
+        self.assertEqual(code, 0)
+        self.assertEqual(buffer.getvalue().strip(), "0.1.0")
+
+
+
 
 if __name__ == "__main__":
     unittest.main()

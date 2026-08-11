@@ -57,6 +57,8 @@ def build_parser() -> argparse.ArgumentParser:
         default="text",
         help="Output format (default: text)",
     )
+
+    subparsers.add_parser("version", help="Print package version")
     return parser
 
 
@@ -142,6 +144,10 @@ def main(argv: list[str] | None = None) -> int:
                 print(format_run_text(report))
         if any(report.outcome in _FAILURE_OUTCOMES for report in reports):
             return 1
+        return 0
+
+    if args.command == "version":
+        print("0.1.0")
         return 0
 
     return 1
