@@ -33,6 +33,15 @@ class CircuitBreaker:
         self.opened_at = None
 
     @property
+    def state(self) -> str:
+        """Return read-only breaker state: closed, open, or half_open."""
+        if self.opened_at is None:
+            return "closed"
+        if (self._monotonic() - self.opened_at) >= self.recovery_timeout:
+            return "half_open"
+        return "open"
+
+    @property
     def is_open(self) -> bool:
         if self.opened_at is None:
             return False

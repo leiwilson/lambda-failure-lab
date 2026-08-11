@@ -84,6 +84,49 @@ class TestCircuitBreaker(unittest.TestCase):
         self.assertEqual(breaker.failures, 0)
         self.assertIsNone(breaker.opened_at)
 
+    def test_state_closed_open_half_open(self):
+        clock = FakeClock()
+        breaker = CircuitBreaker(
+            failure_threshold=1,
+            recovery_timeout=0.5,
+            watch=(TransientError,),
+            clock=clock,
+        )
+        self.assertEqual(breaker.state, "closed")
+
+        def boom():
+            raise TransientError("x")
+
+        with self.assertRaises(TransientError):
+            breaker.call(boom)
+        self.assertEqual(breaker.state, "open")
+        self.assertTrue(breaker.is_open)
+
+        clock.sleep(0.5)
+        self.assertEqual(breaker.state, "half_open")
+        self.assertFalse(breaker.is_open)
+
+    def test_state_returns_to_closed_after_success(self):
+        clock = FakeClock()
+        breaker = CircuitBreaker(
+            failure_threshold=1,
+            recovery_timeout=0.1,
+            watch=(TransientError,),
+            clock=clock,
+        )
+
+        def boom():
+            raise TransientError("x")
+
+        with self.assertRaises(TransientError):
+            breaker.call(boom)
+        clock.sleep(0.1)
+        self.assertEqual(breaker.state, "half_open")
+        self.assertEqual(breaker.call(lambda: {"ok": True})["ok"], True)
+        self.assertEqual(breaker.state, "closed")
+
+
+
 
 if __name__ == "__main__":
     unittest.main()
