@@ -41,6 +41,11 @@ class CircuitBreaker:
             return "half_open"
         return "open"
 
+    def reset(self) -> None:
+        """Clear failure count and close the circuit."""
+        self.failures = 0
+        self.opened_at = None
+
     @property
     def is_open(self) -> bool:
         if self.opened_at is None:
