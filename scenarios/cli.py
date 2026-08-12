@@ -59,6 +59,8 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     subparsers.add_parser("version", help="Print package version")
+
+    subparsers.add_parser("ids", help="Print known scenario ids")
     return parser
 
 
@@ -148,6 +150,11 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "version":
         print("0.1.0")
+        return 0
+
+    if args.command == "ids":
+        for scenario_id in known_scenario_ids():
+            print(scenario_id)
         return 0
 
     return 1

@@ -191,6 +191,14 @@ class TestCli(unittest.TestCase):
         self.assertEqual(code, 0)
         self.assertEqual(buffer.getvalue().strip(), "0.1.0")
 
+    def test_ids_prints_one_id_per_line(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["ids"])
+        self.assertEqual(code, 0)
+        lines = [line for line in buffer.getvalue().splitlines() if line.strip()]
+        self.assertEqual(lines, list(known_scenario_ids()))
+
 
 
 
