@@ -125,6 +125,31 @@ class TestCircuitBreaker(unittest.TestCase):
         self.assertEqual(breaker.call(lambda: {"ok": True})["ok"], True)
         self.assertEqual(breaker.state, "closed")
 
+    def test_reset_clears_failures_and_opened_at(self):
+        clock = FakeClock()
+        breaker = CircuitBreaker(
+            failure_threshold=1,
+            recovery_timeout=1.0,
+            watch=(TransientError,),
+            clock=clock,
+        )
+
+        def boom():
+            raise TransientError("x")
+
+        with self.assertRaises(TransientError):
+            breaker.call(boom)
+        self.assertEqual(breaker.failures, 1)
+        self.assertIsNotNone(breaker.opened_at)
+        self.assertEqual(breaker.state, "open")
+        self.assertTrue(breaker.is_open)
+
+        breaker.reset()
+        self.assertEqual(breaker.failures, 0)
+        self.assertIsNone(breaker.opened_at)
+        self.assertEqual(breaker.state, "closed")
+        self.assertFalse(breaker.is_open)
+
 
 
 
