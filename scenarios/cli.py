@@ -60,7 +60,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     subparsers.add_parser("version", help="Print package version")
 
-    subparsers.add_parser("ids", help="Print known scenario ids")
+    ids_parser = subparsers.add_parser("ids", help="Print known scenario ids")
+    ids_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format (default: text)",
+    )
 
     subparsers.add_parser("count", help="Print number of known scenarios")
     return parser
@@ -155,8 +161,12 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     if args.command == "ids":
-        for scenario_id in known_scenario_ids():
-            print(scenario_id)
+        ids = list(known_scenario_ids())
+        if args.format == "json":
+            print(json.dumps(ids, indent=2))
+        else:
+            for scenario_id in ids:
+                print(scenario_id)
         return 0
 
     if args.command == "count":
