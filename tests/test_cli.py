@@ -199,7 +199,28 @@ class TestCli(unittest.TestCase):
         lines = [line for line in buffer.getvalue().splitlines() if line.strip()]
         self.assertEqual(lines, list(known_scenario_ids()))
 
+    def test_count_prints_known_scenario_count(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["count"])
+        self.assertEqual(code, 0)
+        self.assertEqual(buffer.getvalue().strip(), str(len(known_scenario_ids())))
 
+    def test_ids_json_format(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["ids", "--format", "json"])
+        self.assertEqual(code, 0)
+        parsed = json.loads(buffer.getvalue())
+        self.assertEqual(parsed, list(known_scenario_ids()))
+
+    def test_ids_text_format_default_unchanged(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["ids", "--format", "text"])
+        self.assertEqual(code, 0)
+        lines = [line for line in buffer.getvalue().splitlines() if line.strip()]
+        self.assertEqual(lines, list(known_scenario_ids()))
 
 
 if __name__ == "__main__":
