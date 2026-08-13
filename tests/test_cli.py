@@ -199,7 +199,12 @@ class TestCli(unittest.TestCase):
         lines = [line for line in buffer.getvalue().splitlines() if line.strip()]
         self.assertEqual(lines, list(known_scenario_ids()))
 
-
+    def test_count_prints_known_scenario_count(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["count"])
+        self.assertEqual(code, 0)
+        self.assertEqual(buffer.getvalue().strip(), str(len(known_scenario_ids())))
 
 
 if __name__ == "__main__":

@@ -61,6 +61,8 @@ def build_parser() -> argparse.ArgumentParser:
     subparsers.add_parser("version", help="Print package version")
 
     subparsers.add_parser("ids", help="Print known scenario ids")
+
+    subparsers.add_parser("count", help="Print number of known scenarios")
     return parser
 
 
@@ -155,6 +157,10 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "ids":
         for scenario_id in known_scenario_ids():
             print(scenario_id)
+        return 0
+
+    if args.command == "count":
+        print(len(known_scenario_ids()))
         return 0
 
     return 1
