@@ -25,6 +25,10 @@ class Deadline:
         self._timeout = float(timeout)
         self._started_at = clock.monotonic()
 
+    def elapsed(self) -> float:
+        """Return seconds since start; uncapped, may exceed timeout."""
+        return self._clock.monotonic() - self._started_at
+
     def remaining(self) -> float:
         """Return seconds left before the deadline (never negative)."""
         elapsed = self._clock.monotonic() - self._started_at
