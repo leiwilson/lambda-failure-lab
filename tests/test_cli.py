@@ -2,7 +2,7 @@
 import io
 import json
 import unittest
-from contextlib import redirect_stdout
+from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import patch
 
 from scenarios.cli import main
@@ -221,6 +221,19 @@ class TestCli(unittest.TestCase):
         self.assertEqual(code, 0)
         lines = [line for line in buffer.getvalue().splitlines() if line.strip()]
         self.assertEqual(lines, list(known_scenario_ids()))
+
+
+    def test_has_known_scenario_returns_zero(self):
+        code = main(["has", "retry"])
+        self.assertEqual(code, 0)
+
+    def test_has_unknown_scenario_returns_error(self):
+        err = io.StringIO()
+        with redirect_stderr(err):
+            code = main(["has", "missing"])
+        self.assertEqual(code, 1)
+        self.assertIn("unknown scenario: missing", err.getvalue())
+
 
 
 if __name__ == "__main__":

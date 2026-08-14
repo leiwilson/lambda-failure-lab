@@ -51,6 +51,22 @@ class TestDeadline(unittest.TestCase):
         self.assertAlmostEqual(deadline.elapsed(), 0.8)
         self.assertGreater(deadline.elapsed(), 0.5)
 
+    def test_fraction_used_clamped_to_unit_interval(self):
+        clock = FakeClock()
+        deadline = Deadline(clock, timeout=1.0)
+        self.assertAlmostEqual(deadline.fraction_used(), 0.0)
+        clock.sleep(0.25)
+        self.assertAlmostEqual(deadline.fraction_used(), 0.25)
+        clock.sleep(0.75)
+        self.assertAlmostEqual(deadline.fraction_used(), 1.0)
+        clock.sleep(0.5)
+        self.assertAlmostEqual(deadline.fraction_used(), 1.0)
+
+    def test_fraction_used_zero_timeout_is_one(self):
+        clock = FakeClock()
+        deadline = Deadline(clock, timeout=0.0)
+        self.assertEqual(deadline.fraction_used(), 1.0)
+
 
 if __name__ == "__main__":
     unittest.main()

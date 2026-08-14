@@ -69,6 +69,11 @@ def build_parser() -> argparse.ArgumentParser:
     )
 
     subparsers.add_parser("count", help="Print number of known scenarios")
+
+    has_parser = subparsers.add_parser(
+        "has", help="Check whether a scenario id is known"
+    )
+    has_parser.add_argument("scenario_id", help="Scenario id from the catalog")
     return parser
 
 
@@ -172,6 +177,12 @@ def main(argv: list[str] | None = None) -> int:
     if args.command == "count":
         print(len(known_scenario_ids()))
         return 0
+
+    if args.command == "has":
+        if args.scenario_id in known_scenario_ids():
+            return 0
+        print(f"unknown scenario: {args.scenario_id}", file=sys.stderr)
+        return 1
 
     return 1
 
