@@ -29,6 +29,17 @@ class Deadline:
         """Return seconds since start; uncapped, may exceed timeout."""
         return self._clock.monotonic() - self._started_at
 
+    def fraction_used(self) -> float:
+        """Return elapsed/timeout clamped to [0, 1]; timeout==0 yields 1.0."""
+        if self._timeout == 0:
+            return 1.0
+        ratio = self.elapsed() / self._timeout
+        if ratio < 0:
+            return 0.0
+        if ratio > 1:
+            return 1.0
+        return ratio
+
     def remaining(self) -> float:
         """Return seconds left before the deadline (never negative)."""
         elapsed = self._clock.monotonic() - self._started_at
