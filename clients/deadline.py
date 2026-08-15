@@ -40,6 +40,10 @@ class Deadline:
             return 1.0
         return ratio
 
+    def remaining_fraction(self) -> float:
+        """Return 1.0 - fraction_used(); timeout==0 yields 0.0."""
+        return 1.0 - self.fraction_used()
+
     def remaining(self) -> float:
         """Return seconds left before the deadline (never negative)."""
         elapsed = self._clock.monotonic() - self._started_at

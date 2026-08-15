@@ -68,5 +68,22 @@ class TestDeadline(unittest.TestCase):
         self.assertEqual(deadline.fraction_used(), 1.0)
 
 
+    def test_remaining_fraction_complement_of_fraction_used(self):
+        clock = FakeClock()
+        deadline = Deadline(clock, timeout=1.0)
+        self.assertAlmostEqual(deadline.remaining_fraction(), 1.0)
+        clock.sleep(0.25)
+        self.assertAlmostEqual(deadline.remaining_fraction(), 0.75)
+        clock.sleep(0.75)
+        self.assertAlmostEqual(deadline.remaining_fraction(), 0.0)
+        clock.sleep(0.5)
+        self.assertAlmostEqual(deadline.remaining_fraction(), 0.0)
+
+    def test_remaining_fraction_zero_timeout_is_zero(self):
+        clock = FakeClock()
+        deadline = Deadline(clock, timeout=0.0)
+        self.assertEqual(deadline.remaining_fraction(), 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()
