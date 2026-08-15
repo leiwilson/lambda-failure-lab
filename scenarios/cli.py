@@ -74,6 +74,11 @@ def build_parser() -> argparse.ArgumentParser:
         "has", help="Check whether a scenario id is known"
     )
     has_parser.add_argument("scenario_id", help="Scenario id from the catalog")
+
+    location_parser = subparsers.add_parser(
+        "location", help="Print catalog location for a scenario id"
+    )
+    location_parser.add_argument("scenario_id", help="Scenario id from the catalog")
     return parser
 
 
@@ -183,6 +188,14 @@ def main(argv: list[str] | None = None) -> int:
             return 0
         print(f"unknown scenario: {args.scenario_id}", file=sys.stderr)
         return 1
+
+    if args.command == "location":
+        entry = lookup_scenario(args.scenario_id)
+        if entry is None:
+            print(f"unknown scenario: {args.scenario_id}", file=sys.stderr)
+            return 1
+        print(entry.location)
+        return 0
 
     return 1
 

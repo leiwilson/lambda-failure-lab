@@ -236,5 +236,20 @@ class TestCli(unittest.TestCase):
 
 
 
+    def test_location_prints_catalog_location(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["location", "retry"])
+        self.assertEqual(code, 0)
+        self.assertEqual(buffer.getvalue().strip(), "scenarios/retry")
+
+    def test_location_unknown_scenario_returns_error(self):
+        err = io.StringIO()
+        with redirect_stderr(err):
+            code = main(["location", "missing"])
+        self.assertEqual(code, 1)
+        self.assertIn("unknown scenario: missing", err.getvalue())
+
+
 if __name__ == "__main__":
     unittest.main()
