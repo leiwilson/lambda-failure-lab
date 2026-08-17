@@ -79,6 +79,11 @@ def build_parser() -> argparse.ArgumentParser:
         "location", help="Print catalog location for a scenario id"
     )
     location_parser.add_argument("scenario_id", help="Scenario id from the catalog")
+
+    find_parser = subparsers.add_parser(
+        "find", help="Find scenarios by id or description substring"
+    )
+    find_parser.add_argument("query", help="Case-insensitive match on id or description")
     return parser
 
 
@@ -195,6 +200,20 @@ def main(argv: list[str] | None = None) -> int:
             print(f"unknown scenario: {args.scenario_id}", file=sys.stderr)
             return 1
         print(entry.location)
+        return 0
+
+    if args.command == "find":
+        query = args.query.casefold()
+        matches = [
+            entry.scenario_id
+            for entry in CATALOG
+            if query in entry.scenario_id.casefold()
+            or query in entry.description.casefold()
+        ]
+        if not matches:
+            return 1
+        for scenario_id in matches:
+            print(scenario_id)
         return 0
 
     return 1

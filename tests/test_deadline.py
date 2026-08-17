@@ -85,5 +85,21 @@ class TestDeadline(unittest.TestCase):
         self.assertEqual(deadline.remaining_fraction(), 0.0)
 
 
+
+    def test_remaining_ms_scales_remaining(self):
+        clock = FakeClock()
+        deadline = Deadline(clock, timeout=1.0)
+        self.assertAlmostEqual(deadline.remaining_ms(), 1000.0)
+        clock.sleep(0.4)
+        self.assertAlmostEqual(deadline.remaining_ms(), 600.0)
+        self.assertFalse(deadline.expired())
+
+    def test_remaining_ms_zero_when_expired(self):
+        clock = FakeClock()
+        deadline = Deadline(clock, timeout=0.5)
+        clock.sleep(0.5)
+        self.assertEqual(deadline.remaining_ms(), 0.0)
+
+
 if __name__ == "__main__":
     unittest.main()
