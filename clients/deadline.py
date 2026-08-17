@@ -50,6 +50,10 @@ class Deadline:
         left = self._timeout - elapsed
         return left if left > 0 else 0.0
 
+    def remaining_ms(self) -> float:
+        """Return milliseconds left before the deadline (never negative)."""
+        return self.remaining() * 1000
+
     def expired(self) -> bool:
         """Return True when no time remains."""
         return self.remaining() <= 0
