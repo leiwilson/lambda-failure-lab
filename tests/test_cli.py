@@ -251,5 +251,30 @@ class TestCli(unittest.TestCase):
         self.assertIn("unknown scenario: missing", err.getvalue())
 
 
+
+    def test_find_matches_id_case_insensitive(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["find", "CIRCUIT-BREAKER"])
+        self.assertEqual(code, 0)
+        lines = [line for line in buffer.getvalue().splitlines() if line.strip()]
+        self.assertEqual(lines, ["circuit-breaker"])
+
+    def test_find_matches_description_case_insensitive(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["find", "rate-limit"])
+        self.assertEqual(code, 0)
+        lines = [line for line in buffer.getvalue().splitlines() if line.strip()]
+        self.assertEqual(lines, ["throttle"])
+
+    def test_find_no_matches_returns_error(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["find", "zzzz-no-such"])
+        self.assertEqual(code, 1)
+        self.assertEqual(buffer.getvalue().strip(), "")
+
+
 if __name__ == "__main__":
     unittest.main()
