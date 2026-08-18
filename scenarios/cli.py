@@ -84,6 +84,12 @@ def build_parser() -> argparse.ArgumentParser:
         "find", help="Find scenarios by id or description substring"
     )
     find_parser.add_argument("query", help="Case-insensitive match on id or description")
+    find_parser.add_argument(
+        "--format",
+        choices=("text", "json"),
+        default="text",
+        help="Output format (default: text)",
+    )
     return parser
 
 
@@ -210,11 +216,12 @@ def main(argv: list[str] | None = None) -> int:
             if query in entry.scenario_id.casefold()
             or query in entry.description.casefold()
         ]
-        if not matches:
-            return 1
-        for scenario_id in matches:
-            print(scenario_id)
-        return 0
+        if args.format == "json":
+            print(json.dumps(matches, indent=2))
+        else:
+            for scenario_id in matches:
+                print(scenario_id)
+        return 0 if matches else 1
 
     return 1
 
