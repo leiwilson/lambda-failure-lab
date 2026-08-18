@@ -275,6 +275,30 @@ class TestCli(unittest.TestCase):
         self.assertEqual(code, 1)
         self.assertEqual(buffer.getvalue().strip(), "")
 
+    def test_find_json_format(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["find", "CIRCUIT-BREAKER", "--format", "json"])
+        self.assertEqual(code, 0)
+        parsed = json.loads(buffer.getvalue())
+        self.assertEqual(parsed, ["circuit-breaker"])
+
+    def test_find_text_format_default_unchanged(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["find", "CIRCUIT-BREAKER", "--format", "text"])
+        self.assertEqual(code, 0)
+        lines = [line for line in buffer.getvalue().splitlines() if line.strip()]
+        self.assertEqual(lines, ["circuit-breaker"])
+
+    def test_find_json_no_matches_returns_empty_array(self):
+        buffer = io.StringIO()
+        with redirect_stdout(buffer):
+            code = main(["find", "zzzz-no-such", "--format", "json"])
+        self.assertEqual(code, 1)
+        parsed = json.loads(buffer.getvalue())
+        self.assertEqual(parsed, [])
+
 
 if __name__ == "__main__":
     unittest.main()
