@@ -173,9 +173,13 @@ class TestCli(unittest.TestCase):
             code = main(["show", "retry", "--format", "json"])
         self.assertEqual(code, 0)
         parsed = json.loads(buffer.getvalue())
+        self.assertEqual(
+            set(parsed.keys()),
+            {"scenario_id", "location", "description"},
+        )
         self.assertEqual(parsed["scenario_id"], "retry")
         self.assertEqual(parsed["location"], "scenarios/retry")
-        self.assertIn("description", parsed)
+        self.assertTrue(parsed["description"])
 
     def test_show_unknown_scenario_returns_error(self):
         buffer = io.StringIO()
@@ -281,7 +285,9 @@ class TestCli(unittest.TestCase):
             code = main(["find", "CIRCUIT-BREAKER", "--format", "json"])
         self.assertEqual(code, 0)
         parsed = json.loads(buffer.getvalue())
+        self.assertIsInstance(parsed, list)
         self.assertEqual(parsed, ["circuit-breaker"])
+        self.assertTrue(all(isinstance(item, str) for item in parsed))
 
     def test_find_text_format_default_unchanged(self):
         buffer = io.StringIO()
@@ -297,6 +303,7 @@ class TestCli(unittest.TestCase):
             code = main(["find", "zzzz-no-such", "--format", "json"])
         self.assertEqual(code, 1)
         parsed = json.loads(buffer.getvalue())
+        self.assertIsInstance(parsed, list)
         self.assertEqual(parsed, [])
 
 

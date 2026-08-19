@@ -13,6 +13,7 @@ class ScenarioEntry:
     scenario_id: str
     location: str
     description: str
+    tags: tuple[str, ...]
 
 
 CATALOG: tuple[ScenarioEntry, ...] = (
@@ -20,21 +21,25 @@ CATALOG: tuple[ScenarioEntry, ...] = (
         "timeout",
         "scenarios/timeout",
         "Sleep past a configured timeout to simulate Lambda time limits.",
+        ("timeout", "latency", "failure-mode"),
     ),
     ScenarioEntry(
         "retry",
         "scenarios/retry",
         "Raise transient errors so callers can exercise retry logic.",
+        ("retry", "transient", "backoff"),
     ),
     ScenarioEntry(
         "throttle",
         "scenarios/throttle",
         "Simulate 429 rate-limit responses with optional Retry-After.",
+        ("throttle", "rate-limit", "retry-after"),
     ),
     ScenarioEntry(
         "circuit-breaker",
         "clients/circuit_breaker.py",
         "Open the circuit after repeated failures and recover after a cooldown.",
+        ("circuit-breaker", "resilience", "recovery"),
     ),
 )
 
@@ -53,10 +58,14 @@ def format_catalog() -> str:
     return "\n".join(lines)
 
 
-def catalog_entries_json() -> list[dict[str, str]]:
+def catalog_entries_json() -> list[dict[str, object]]:
     """Return catalog entries as stable JSON-serializable dicts."""
     return [
-        {"scenario_id": entry.scenario_id, "description": entry.description}
+        {
+            "scenario_id": entry.scenario_id,
+            "description": entry.description,
+            "tags": list(entry.tags),
+        }
         for entry in CATALOG
     ]
 

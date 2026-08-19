@@ -23,6 +23,7 @@ class TestCatalog(unittest.TestCase):
         for entry in CATALOG:
             self.assertTrue(entry.description)
             self.assertTrue(entry.location)
+            self.assertTrue(entry.tags)
 
     def test_format_catalog_includes_entries(self):
         text = format_catalog()
@@ -44,7 +45,9 @@ class TestCatalog(unittest.TestCase):
         for entry in entries:
             self.assertIn("scenario_id", entry)
             self.assertIn("description", entry)
-            self.assertEqual(set(entry.keys()), {"scenario_id", "description"})
+            self.assertIn("tags", entry)
+            self.assertIsInstance(entry["tags"], list)
+            self.assertEqual(set(entry.keys()), {"scenario_id", "description", "tags"})
 
     def test_format_catalog_json_is_stable(self):
         parsed = json.loads(format_catalog_json())
@@ -52,6 +55,7 @@ class TestCatalog(unittest.TestCase):
             [entry["scenario_id"] for entry in parsed],
             ["timeout", "retry", "throttle", "circuit-breaker"],
         )
+        self.assertEqual(parsed[0]["tags"], ["timeout", "latency", "failure-mode"])
 
     def test_main_json_format(self):
         buffer = io.StringIO()

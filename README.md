@@ -9,6 +9,10 @@ Includes a small client-side exponential backoff helper for exercising those fai
 - `scenarios/retry` — handler that raises a transient error
 - `scenarios/throttle` — handler that simulates 429 / rate-limit responses
 
+The JSON catalog output (`python -m scenarios.catalog --format json`) now includes
+`scenario_id`, `description`, and `tags` for each entry so downstream tooling can
+filter by capability without parsing free-form text.
+
 ## Client helpers
 
 - `clients/backoff.py` — exponential backoff retries
