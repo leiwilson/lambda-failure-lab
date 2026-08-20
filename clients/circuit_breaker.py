@@ -41,6 +41,14 @@ class CircuitBreaker:
             return "half_open"
         return "open"
 
+    def seconds_until_half_open(self) -> float:
+        """Return seconds until half-open; 0.0 when closed or half-open."""
+        if self.opened_at is None:
+            return 0.0
+        elapsed = self._monotonic() - self.opened_at
+        remaining = self.recovery_timeout - elapsed
+        return remaining if remaining > 0 else 0.0
+
     def reset(self) -> None:
         """Clear failure count and close the circuit."""
         self.failures = 0

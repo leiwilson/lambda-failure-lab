@@ -25,6 +25,23 @@ def _jitter_source(
     return None
 
 
+
+def compute_backoff_delay(
+    attempt: int,
+    *,
+    base_delay: float,
+    max_delay: float,
+    jitter: bool = True,
+    rng: random.Random | None = None,
+) -> float:
+    """Return exponential backoff delay for attempt, optionally with jitter."""
+    delay = min(max_delay, base_delay * (2 ** attempt))
+    if jitter:
+        jitter_roll = rng.random() if rng is not None else random.random()
+        delay = delay * (0.5 + jitter_roll)
+    return delay
+
+
 def retry_with_backoff(
     fn: Callable[[], object],
     *,
@@ -48,14 +65,13 @@ def retry_with_backoff(
         except errors as exc:
             if attempt >= retries:
                 raise
-            delay = min(max_delay, base_delay * (2 ** attempt))
-            if jitter:
-                jitter_roll = (
-                    jitter_rng.random()
-                    if jitter_rng is not None
-                    else random.random()
-                )
-                delay = delay * (0.5 + jitter_roll)
+            delay = compute_backoff_delay(
+                attempt,
+                base_delay=base_delay,
+                max_delay=max_delay,
+                jitter=jitter,
+                rng=jitter_rng,
+            )
             # Prefer Retry-After when present (ThrottleError).
             retry_after = getattr(exc, "retry_after", None)
             if retry_after is not None:
