@@ -2,7 +2,7 @@
 import random
 import unittest
 
-from clients.backoff import retry_with_backoff
+from clients.backoff import compute_backoff_delay, retry_with_backoff
 from clients.clock import FakeClock
 from scenarios.retry.handler import TransientError
 from scenarios.throttle.handler import ThrottleError, reset as throttle_reset
@@ -171,6 +171,36 @@ class TestBackoff(unittest.TestCase):
             for attempt, roll in enumerate(rolls)
         )
         self.assertAlmostEqual(clock.monotonic(), expected)
+
+    def test_compute_backoff_delay_without_jitter(self):
+        self.assertAlmostEqual(
+            compute_backoff_delay(
+                0, base_delay=0.01, max_delay=0.2, jitter=False
+            ),
+            0.01,
+        )
+        self.assertAlmostEqual(
+            compute_backoff_delay(
+                1, base_delay=0.01, max_delay=0.2, jitter=False
+            ),
+            0.02,
+        )
+        self.assertAlmostEqual(
+            compute_backoff_delay(
+                10, base_delay=0.01, max_delay=0.2, jitter=False
+            ),
+            0.2,
+        )
+
+    def test_compute_backoff_delay_with_rng_jitter(self):
+        rng = random.Random(42)
+        roll = random.Random(42).random()
+        expected = 0.01 * (0.5 + roll)
+        actual = compute_backoff_delay(
+            0, base_delay=0.01, max_delay=0.2, jitter=True, rng=rng
+        )
+        self.assertAlmostEqual(actual, expected)
+
 
 
 if __name__ == "__main__":
