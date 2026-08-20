@@ -151,6 +151,58 @@ class TestCircuitBreaker(unittest.TestCase):
         self.assertFalse(breaker.is_open)
 
 
+    def test_seconds_until_half_open_closed_is_zero(self):
+        clock = FakeClock()
+        breaker = CircuitBreaker(
+            failure_threshold=1,
+            recovery_timeout=0.5,
+            watch=(TransientError,),
+            clock=clock,
+        )
+        self.assertEqual(breaker.seconds_until_half_open(), 0.0)
+        self.assertEqual(breaker.state, "closed")
+
+    def test_seconds_until_half_open_while_open(self):
+        clock = FakeClock()
+        breaker = CircuitBreaker(
+            failure_threshold=1,
+            recovery_timeout=0.5,
+            watch=(TransientError,),
+            clock=clock,
+        )
+
+        def boom():
+            raise TransientError("x")
+
+        with self.assertRaises(TransientError):
+            breaker.call(boom)
+        self.assertEqual(breaker.state, "open")
+        self.assertAlmostEqual(breaker.seconds_until_half_open(), 0.5)
+        clock.sleep(0.2)
+        self.assertAlmostEqual(breaker.seconds_until_half_open(), 0.3)
+        # read-only: state and opened_at unchanged by accessor
+        self.assertEqual(breaker.state, "open")
+        self.assertIsNotNone(breaker.opened_at)
+        self.assertEqual(breaker.failures, 1)
+
+    def test_seconds_until_half_open_zero_when_half_open(self):
+        clock = FakeClock()
+        breaker = CircuitBreaker(
+            failure_threshold=1,
+            recovery_timeout=0.5,
+            watch=(TransientError,),
+            clock=clock,
+        )
+
+        def boom():
+            raise TransientError("x")
+
+        with self.assertRaises(TransientError):
+            breaker.call(boom)
+        clock.sleep(0.5)
+        self.assertEqual(breaker.state, "half_open")
+        self.assertEqual(breaker.seconds_until_half_open(), 0.0)
+
 
 
 if __name__ == "__main__":
